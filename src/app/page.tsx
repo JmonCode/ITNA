@@ -2,15 +2,22 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   Bell,
+  Compass,
+  FileSearch,
+  Layers,
   MessageCircle,
   Search,
   ShieldCheck,
   Sparkles,
   ThumbsUp,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 
 import { MarqueeStrip } from "@/components/marquee-strip";
 import { SiteHeader } from "@/components/site-header";
+
+/* ── Static demo data ── */
 
 const featuredProducts = [
   {
@@ -43,14 +50,41 @@ const exampleQueries = [
   "AI로 글쓰기 도와주는 도구",
 ];
 
+const howItWorks = [
+  {
+    step: "01",
+    icon: Search,
+    title: "문장으로 검색",
+    description: "필요한 기능이나 해결할 문제를 자연스러운 문장으로 입력하세요.",
+    color: "bg-block-cream",
+  },
+  {
+    step: "02",
+    icon: Sparkles,
+    title: "AI 매칭",
+    description: "의미 기반 검색이 키워드가 아닌 문맥을 이해해 가장 적합한 제품을 찾습니다.",
+    color: "bg-block-lilac",
+  },
+  {
+    step: "03",
+    icon: Compass,
+    title: "발견과 비교",
+    description: "상세 정보, 실사용자 댓글, 추천 수를 보고 나에게 맞는 제품을 선택하세요.",
+    color: "bg-block-mint",
+  },
+];
+
+/* ── Page ── */
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
       <MarqueeStrip />
 
-      <section className="container-page grid gap-10 py-14 md:grid-cols-[1.05fr_0.95fr] md:items-center md:py-20">
-        <div className="space-y-8">
+      {/* ━━ Hero ━━ */}
+      <section className="container-page grid gap-10 py-14 md:grid-cols-[1.05fr_0.95fr] md:items-center md:py-24">
+        <div className="space-y-8 animate-in">
           <p className="text-eyebrow">Product Discovery</p>
           <div className="space-y-6">
             <h1 className="text-display-xl max-w-4xl">
@@ -72,7 +106,7 @@ export default function Home() {
               <input
                 id="q"
                 name="q"
-                className="min-h-14 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-ink"
+                className="min-h-14 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:opacity-40"
                 placeholder="예: 혼자 공부할 때 집중력 관리해주는 앱"
               />
             </div>
@@ -86,7 +120,7 @@ export default function Home() {
             {exampleQueries.map((query) => (
               <Link
                 key={query}
-                className="rounded-[var(--radius-full)] border border-hairline px-4 py-2 text-body-sm"
+                className="pill-tag"
                 href={`/products?q=${encodeURIComponent(query)}`}
               >
                 {query}
@@ -95,7 +129,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="color-block bg-block-lime">
+        <div className="color-block bg-block-lime animate-in animate-in-delay-1">
           <div className="space-y-8">
             <div className="flex items-center justify-between gap-4">
               <p className="text-eyebrow">V1 Signal</p>
@@ -125,6 +159,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ━━ How It Works — Cream color-block ━━ */}
+      <section className="container-page py-10 md:py-16">
+        <div className="color-block bg-block-cream">
+          <div className="space-y-10">
+            <div className="max-w-2xl space-y-4">
+              <p className="text-eyebrow">How It Works</p>
+              <h2 className="text-display-lg">
+                세 단계로 제품을 발견하세요.
+              </h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {howItWorks.map((item) => (
+                <div key={item.step} className="template-card bg-canvas space-y-5">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-full)] text-caption font-bold ${item.color}`}
+                    >
+                      {item.step}
+                    </span>
+                    <item.icon size={24} strokeWidth={1.6} className="opacity-50" />
+                  </div>
+                  <h3 className="text-headline">{item.title}</h3>
+                  <p className="text-body-sm">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━ Featured Products ━━ */}
       <section id="products" className="container-page space-y-8 py-10 md:py-16">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div className="space-y-3">
@@ -137,14 +202,17 @@ export default function Home() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {featuredProducts.map((product) => (
-            <article key={product.name} className="operational-card overflow-hidden">
-              <div className={`h-24 ${product.accent}`} />
+          {featuredProducts.map((product, i) => (
+            <article
+              key={product.name}
+              className={`operational-card overflow-hidden animate-in animate-in-delay-${i + 1}`}
+            >
+              <div className={`h-28 ${product.accent}`} />
               <div className="space-y-5 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-caption">{product.category}</p>
-                    <h3 className="text-headline">{product.name}</h3>
+                    <h3 className="text-headline mt-1">{product.name}</h3>
                   </div>
                   <Link
                     className="btn-icon"
@@ -171,12 +239,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ━━ Makers — Navy color-block ━━ */}
       <section id="makers" className="container-page py-10 md:py-16">
         <div className="color-block bg-block-navy text-inverse-ink">
           <div className="grid gap-10 md:grid-cols-[0.8fr_1.2fr] md:items-center">
             <div className="max-w-xl space-y-4">
               <p className="text-eyebrow">For Makers</p>
-              <h2 className="text-subhead">
+              <h2 className="text-display-lg">
                 제품을 등록하고 초기 사용자를 만나세요.
               </h2>
             </div>
@@ -198,29 +267,142 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ━━ Search Intelligence — Lilac color-block ━━ */}
+      <section className="container-page py-10 md:py-16">
+        <div className="color-block bg-block-lilac">
+          <div className="grid gap-10 md:grid-cols-2 md:items-center">
+            <div className="space-y-4">
+              <p className="text-eyebrow">Search Intelligence</p>
+              <h2 className="text-display-lg">
+                검색 데이터가 쌓일수록 더 정확해집니다.
+              </h2>
+              <p className="text-body-lg">
+                모든 검색어와 클릭을 익명으로 기록합니다. zero-result 검색어는
+                새로운 제품 소싱 신호가 되고, 클릭 패턴은 검색 랭킹을 개선합니다.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="template-card bg-canvas space-y-3">
+                <TrendingUp size={24} strokeWidth={1.6} />
+                <h3 className="text-headline">검색 랭킹</h3>
+                <p className="text-body-sm">
+                  클릭률·추천수·최신성을 결합한 하이브리드 점수로 정렬합니다.
+                </p>
+              </div>
+              <div className="template-card bg-canvas space-y-3">
+                <FileSearch size={24} strokeWidth={1.6} />
+                <h3 className="text-headline">Zero-result 감지</h3>
+                <p className="text-body-sm">
+                  결과 없는 검색을 추적해 새로운 제품 기회를 발견합니다.
+                </p>
+              </div>
+              <div className="template-card bg-canvas space-y-3">
+                <Zap size={24} strokeWidth={1.6} />
+                <h3 className="text-headline">의미 검색</h3>
+                <p className="text-body-sm">
+                  OpenAI 임베딩으로 키워드가 아닌 의미를 매칭합니다.
+                </p>
+              </div>
+              <div className="template-card bg-canvas space-y-3">
+                <Layers size={24} strokeWidth={1.6} />
+                <h3 className="text-headline">CSV 내보내기</h3>
+                <p className="text-body-sm">
+                  관리자가 검색 로그와 제품 데이터를 CSV로 추출합니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━ Ops Cards ━━ */}
       <section id="ops" className="container-page grid gap-4 py-10 md:grid-cols-3 md:py-16">
-        <div className="template-card">
-          <Search className="mb-10" size={28} strokeWidth={1.8} />
+        <div className="template-card space-y-4">
+          <Search className="mb-6" size={28} strokeWidth={1.8} />
           <h3 className="text-headline">검색 로그 우선</h3>
-          <p className="mt-3 text-body-sm">
+          <p className="text-body-sm">
             zero-result, 클릭 순위, 외부 링크 클릭을 저장해 seed 보강 방향을 정합니다.
           </p>
         </div>
-        <div className="template-card">
-          <MessageCircle className="mb-10" size={28} strokeWidth={1.8} />
+        <div className="template-card space-y-4">
+          <MessageCircle className="mb-6" size={28} strokeWidth={1.8} />
           <h3 className="text-headline">댓글은 즉시 노출</h3>
-          <p className="mt-3 text-body-sm">
+          <p className="text-body-sm">
             사용자 반응을 빠르게 만들고 신고/관리자 숨김으로 운영 리스크를 관리합니다.
           </p>
         </div>
-        <div className="template-card">
-          <ShieldCheck className="mb-10" size={28} strokeWidth={1.8} />
+        <div className="template-card space-y-4">
+          <ShieldCheck className="mb-6" size={28} strokeWidth={1.8} />
           <h3 className="text-headline">RLS 기반 운영</h3>
-          <p className="mt-3 text-body-sm">
+          <p className="text-body-sm">
             공개 데이터와 관리자 액션을 Supabase 정책으로 분리합니다.
           </p>
         </div>
       </section>
+
+      {/* ━━ CTA — Mint color-block ━━ */}
+      <section className="container-page py-10 md:py-16">
+        <div className="color-block bg-block-mint">
+          <div className="mx-auto max-w-2xl space-y-8 text-center">
+            <p className="text-eyebrow">Get Started</p>
+            <h2 className="text-display-lg">
+              당신의 제품을 필요한 사람에게 연결하세요.
+            </h2>
+            <p className="text-body-lg">
+              ITNA에 제품을 등록하면 자연어 검색으로 잠재 사용자가 당신의 제품을
+              발견할 수 있습니다. 관리자 승인 후 바로 노출됩니다.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link className="btn-primary" href="/submit">
+                제품 등록하기
+                <ArrowUpRight size={20} strokeWidth={1.8} />
+              </Link>
+              <Link className="btn-secondary border border-hairline" href="/products">
+                제품 탐색하기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━ Footer ━━ */}
+      <footer className="border-t border-hairline-soft">
+        <div className="container-page grid gap-8 py-16 text-body-sm md:grid-cols-4 md:py-20">
+          <div className="space-y-3">
+            <p className="text-headline leading-none">ITNA</p>
+            <p className="text-body-sm opacity-60">
+              필요한 웹/앱 제품을 문장으로 찾는 탐색 플랫폼
+            </p>
+          </div>
+          <div className="space-y-3">
+            <p className="text-caption">Product</p>
+            <nav className="flex flex-col gap-2">
+              <Link href="/products" className="transition-opacity hover:opacity-60">제품 탐색</Link>
+              <Link href="/submit" className="transition-opacity hover:opacity-60">제품 등록</Link>
+            </nav>
+          </div>
+          <div className="space-y-3">
+            <p className="text-caption">Resources</p>
+            <nav className="flex flex-col gap-2">
+              <Link href="/#ops" className="transition-opacity hover:opacity-60">운영 기준</Link>
+              <Link href="/#makers" className="transition-opacity hover:opacity-60">제작자 가이드</Link>
+            </nav>
+          </div>
+          <div className="space-y-3">
+            <p className="text-caption">Legal</p>
+            <nav className="flex flex-col gap-2">
+              <span className="opacity-40">이용약관 (준비 중)</span>
+              <span className="opacity-40">개인정보처리방침 (준비 중)</span>
+            </nav>
+          </div>
+        </div>
+        <div className="border-t border-hairline-soft">
+          <div className="container-page flex items-center justify-between py-6 text-caption opacity-40">
+            <span>© 2026 ITNA</span>
+            <span>Seoul, Korea</span>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

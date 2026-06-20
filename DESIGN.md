@@ -1,19 +1,19 @@
 ---
 version: alpha
 name: Figma-design-analysis
-description: "A confident black-and-white editorial frame interrupted by oversized, hand-cut pastel color blocks. The marketing canvas is rigorously monochrome — figmaSans variable type, pure white surfaces, pure black ink, pill-shaped CTAs — while each story section drops the page into a saturated lime, lavender, cream, mint, or pink panel that reads like a sticky note placed on a clean desk. The result is a design system that feels both technical and joyful — a tool for serious work, made by people who like color."
+description: "A confident near-black-and-warm-white editorial frame interrupted by oversized, hand-cut pastel color blocks. The marketing canvas is softly monochrome — figmaSans variable type, warm off-white surfaces, deep navy-black ink, pill-shaped CTAs — while each story section drops the page into a saturated lime, lavender, cream, mint, or pink panel that reads like a sticky note placed on a clean desk. The result is a design system that feels both technical and joyful — a tool for serious work, made by people who like color."
 
 colors:
-  primary: "#000000"
-  on-primary: "#ffffff"
-  ink: "#000000"
-  canvas: "#ffffff"
-  inverse-canvas: "#000000"
-  inverse-ink: "#ffffff"
-  on-inverse-soft: "#ffffff"
-  hairline: "#e6e6e6"
-  hairline-soft: "#f1f1f1"
-  surface-soft: "#f7f7f5"
+  primary: "#1a1a2e"
+  on-primary: "#f5f3ef"
+  ink: "#1a1a2e"
+  canvas: "#faf9f7"
+  inverse-canvas: "#1a1a2e"
+  inverse-ink: "#f5f3ef"
+  on-inverse-soft: "#f5f3ef"
+  hairline: "#dedad4"
+  hairline-soft: "#eae7e2"
+  surface-soft: "#f0eeea"
   block-lime: "#dceeb1"
   block-lilac: "#c5b0f4"
   block-cream: "#f4ecd6"
@@ -23,7 +23,7 @@ colors:
   block-navy: "#1f1d3d"
   accent-magenta: "#ff3d8b"
   semantic-success: "#1ea64a"
-  overlay-scrim: "#000000"
+  overlay-scrim: "#1a1a2e"
 
 typography:
   display-xl:
