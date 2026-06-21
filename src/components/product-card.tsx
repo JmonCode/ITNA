@@ -4,58 +4,77 @@ import { ArrowUpRight, Eye, MessageCircle, ThumbsUp } from "lucide-react";
 
 import type { ProductListItem } from "@/lib/products/catalog";
 
-const fallbackProductImageSrc = "/images/product-fallback.png";
+const accentColors = [
+  "bg-block-lime",
+  "bg-block-lilac",
+  "bg-block-coral",
+  "bg-block-mint",
+  "bg-block-cream",
+  "bg-block-pink",
+];
+
+function getAccentColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  }
+  return accentColors[Math.abs(hash) % accentColors.length];
+}
 
 export function ProductCard({ product }: { product: ProductListItem }) {
-  const imageSrc = product.imageUrl ?? fallbackProductImageSrc;
-  const isFallbackImage = !product.imageUrl;
-  const imageAlt = isFallbackImage
-    ? `${product.name} 제품 기본 이미지`
-    : `${product.name} 제품 이미지`;
+  const accent = getAccentColor(product.id);
 
   return (
     <Link
-      className="group block h-full rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+      className="group block rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
       href={`/products/${product.id}`}
       aria-label={`${product.name} 상세 보기`}
     >
-      <article className="operational-card flex h-full flex-col gap-4 p-3 transition-colors group-hover:border-primary">
-        <div className="relative aspect-[16/10] overflow-hidden rounded-[var(--radius-md)] bg-surface-soft">
-          <Image
-            className={isFallbackImage ? "object-contain p-3" : "object-cover"}
-            src={imageSrc}
-            alt={imageAlt}
-            fill
-            loading="lazy"
-            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 50vw, (min-width: 640px) 50vw, 100vw"
-            unoptimized
-          />
+      <article className="product-card grid grid-cols-[84px_1fr] gap-3 p-3 sm:grid-cols-[112px_1fr_auto] sm:items-center sm:gap-4 sm:p-4">
+        <div className={`relative row-span-2 aspect-square overflow-hidden rounded-[var(--radius-sm)] sm:row-span-1 sm:aspect-[4/3] ${accent}`}>
+          {product.imageUrl ? (
+            <Image
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              src={product.imageUrl}
+              alt={`${product.name} 제품 이미지`}
+              fill
+              loading="lazy"
+              sizes="112px"
+              unoptimized
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-headline">
+              {product.name.slice(0, 1)}
+            </span>
+          )}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-4 px-1 pb-1">
-          <div className="space-y-3">
-            <span className="inline-flex w-fit rounded-[var(--radius-full)] border border-hairline px-3 py-1 text-caption">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-[var(--radius-sm)] bg-surface-soft px-2 py-1 text-caption">
               {product.category.name}
             </span>
-
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="text-card-title text-clamp-2">{product.name}</h3>
-              <span
-                className="btn-icon h-11 w-11 shrink-0 transition-colors group-hover:bg-primary group-hover:text-on-primary"
-                aria-hidden="true"
-              >
-                <ArrowUpRight size={20} strokeWidth={1.8} />
+            {product.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="text-caption opacity-50">
+                #{tag}
               </span>
-            </div>
-
-            <p className="text-body-sm text-clamp-2">{product.shortDescription}</p>
+            ))}
           </div>
+          <h3 className="text-card-title text-clamp-2">{product.name}</h3>
+          <p className="text-body-sm text-clamp-2 opacity-70">
+            {product.shortDescription}
+          </p>
+        </div>
 
-          <div className="mt-auto grid grid-cols-3 gap-2 border-t border-hairline-soft pt-3 text-caption">
-            <Metric icon={<ThumbsUp size={12} strokeWidth={1.8} />} label="추천" value={product.recommendationCount} />
-            <Metric icon={<MessageCircle size={12} strokeWidth={1.8} />} label="댓글" value={product.commentCount} />
-            <Metric icon={<Eye size={12} strokeWidth={1.8} />} label="조회" value={product.viewCount} />
+        <div className="col-start-2 flex items-center justify-between gap-4 sm:col-start-auto sm:flex-col sm:items-end">
+          <div className="flex items-center gap-3 text-caption opacity-50 sm:flex-col sm:items-end sm:gap-2">
+            <Metric icon={<ThumbsUp size={11} strokeWidth={2} />} value={product.recommendationCount} />
+            <Metric icon={<MessageCircle size={11} strokeWidth={2} />} value={product.commentCount} />
+            <Metric icon={<Eye size={11} strokeWidth={2} />} value={product.viewCount} />
           </div>
+          <span className="btn-icon h-9 w-9" aria-hidden="true">
+            <ArrowUpRight size={16} strokeWidth={1.8} />
+          </span>
         </div>
       </article>
     </Link>
@@ -64,19 +83,15 @@ export function ProductCard({ product }: { product: ProductListItem }) {
 
 function Metric({
   icon,
-  label,
   value,
 }: {
   icon: React.ReactNode;
-  label: string;
   value: number;
 }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap">
+    <span className="inline-flex items-center gap-1">
       <span aria-hidden="true">{icon}</span>
-      <span>
-        {label} {value.toLocaleString("ko-KR")}
-      </span>
+      <span>{value.toLocaleString("ko-KR")}</span>
     </span>
   );
 }

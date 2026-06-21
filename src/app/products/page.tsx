@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowUpRight, Bell, Filter, Search } from "lucide-react";
+import { ArrowUpRight, Bell, Search } from "lucide-react";
 
 import { MarqueeStrip } from "@/components/marquee-strip";
 import { ProductCard } from "@/components/product-card";
+import { ProductLiveSearch } from "@/components/product-live-search";
 import { SiteHeader } from "@/components/site-header";
 import { getProductCatalog, type ProductCatalogFilters } from "@/lib/products/catalog";
 
@@ -10,24 +11,33 @@ type ProductsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const productTypeOptions = [
-  { value: "web", label: "웹" },
-  { value: "app", label: "앱" },
-  { value: "web_app", label: "웹 + 앱" },
-];
-
-const pricingOptions = [
-  { value: "free", label: "무료" },
-  { value: "paid", label: "유료" },
-  { value: "freemium", label: "부분 유료" },
-  { value: "subscription", label: "구독형" },
-];
+const filterGroups = [
+  {
+    key: "type",
+    label: "유형",
+    options: [
+      { value: "web", label: "웹" },
+      { value: "app", label: "앱" },
+      { value: "web_app", label: "웹+앱" },
+    ],
+  },
+  {
+    key: "pricing",
+    label: "가격",
+    options: [
+      { value: "free", label: "무료" },
+      { value: "paid", label: "유료" },
+      { value: "freemium", label: "프리미엄" },
+      { value: "subscription", label: "구독" },
+    ],
+  },
+] as const;
 
 const sortOptions = [
   { value: "newest", label: "최신순" },
-  { value: "popular", label: "추천 많은 순" },
-  { value: "comments", label: "댓글 많은 순" },
-  { value: "views", label: "조회 많은 순" },
+  { value: "popular", label: "추천순" },
+  { value: "comments", label: "댓글순" },
+  { value: "views", label: "조회순" },
 ];
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
@@ -35,75 +45,61 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const filters = normalizeFilters(params);
   const catalog = await getProductCatalog(filters);
   const selectedSort = filters.sort ?? "newest";
+
+  const hasActiveFilters = filters.category || filters.productType || filters.pricing;
   const resultLabel = filters.query
-    ? `"${filters.query}" 검색 결과 ${catalog.products.length}개`
-    : `전체 제품 ${catalog.products.length}개`;
+    ? `"${filters.query}" 검색 결과`
+    : "전체 제품";
 
   return (
     <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
       <MarqueeStrip />
 
-      <section className="container-page space-y-6 py-10 md:py-12">
-        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
-          <div className="space-y-3">
-            <p className="text-eyebrow">Product Search</p>
-            <h1 className="text-display-lg">제품 탐색</h1>
-            <p className="max-w-2xl text-body">
-              필요한 기능, 상황, 문제를 문장으로 입력하고 관련 제품을 바로 비교하세요.
-            </p>
+      {/* ── Hero search area ── */}
+      <section className="border-b border-hairline-soft">
+        <div className="container-page space-y-6 py-8 md:py-10">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-eyebrow">Product Search</p>
+              <h1 className="text-display-lg mt-1">제품 탐색</h1>
+            </div>
+            <Link className="btn-primary shrink-0" href="/submit">
+              제품 등록
+              <ArrowUpRight size={18} strokeWidth={1.8} />
+            </Link>
           </div>
-          <Link className="btn-secondary border border-hairline" href="/submit">
-            제품 등록
-            <ArrowUpRight size={20} strokeWidth={1.8} />
-          </Link>
-        </div>
 
-        <form className="operational-card flex flex-col gap-3 p-3 md:flex-row" action="/products">
-          <label className="sr-only" htmlFor="q">
-            제품 검색
-          </label>
-          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[var(--radius-md)] bg-surface-soft px-4">
-            <Search size={22} strokeWidth={1.8} />
-            <input
-              id="q"
-              name="q"
-              className="min-h-14 min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-ink"
-              placeholder="예: 앱 출시 전에 랜딩페이지 만들 수 있는 서비스"
-              defaultValue={filters.query}
-            />
-          </div>
-          <input type="hidden" name="category" value={filters.category ?? ""} />
-          <input type="hidden" name="type" value={filters.productType ?? ""} />
-          <input type="hidden" name="pricing" value={filters.pricing ?? ""} />
-          <button className="btn-primary" type="submit">
-            검색
-            <ArrowUpRight size={20} strokeWidth={1.8} />
-          </button>
-        </form>
+          <ProductLiveSearch filters={filters} />
 
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <Filter className="mt-2 shrink-0 md:hidden" size={20} strokeWidth={1.8} />
-          <FilterChip href={buildHref(filters, { category: undefined })} selected={!filters.category}>
-            전체
-          </FilterChip>
-          {catalog.categories.map((category) => (
-            <FilterChip
-              key={category.slug}
-              href={buildHref(filters, { category: category.slug })}
-              selected={filters.category === category.slug}
+          {/* ── Categories — horizontal scroll ── */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <CategoryChip
+              href={buildHref(filters, { category: undefined })}
+              selected={!filters.category}
             >
-              {category.name}
-            </FilterChip>
-          ))}
+              전체
+            </CategoryChip>
+            {catalog.categories.map((category) => (
+              <CategoryChip
+                key={category.slug}
+                href={buildHref(filters, { category: category.slug })}
+                selected={filters.category === category.slug}
+              >
+                {category.name}
+              </CategoryChip>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="container-page grid gap-6 pb-16 md:grid-cols-[240px_1fr]">
+      {/* ── Main Layout ── */}
+      <section className="container-page grid gap-8 py-8 md:grid-cols-[220px_1fr] md:py-10">
+        {/* Desktop Sidebar */}
         <aside className="hidden md:block">
-          <div className="sticky top-24 space-y-6 border-r border-hairline-soft pr-6">
+          <div className="sticky top-24 space-y-8 border-r border-hairline-soft pr-6">
             <FilterGroup title="제품 유형">
-              {productTypeOptions.map((option) => (
+              {filterGroups[0].options.map((option) => (
                 <FilterLink
                   key={option.value}
                   href={buildHref(filters, {
@@ -117,7 +113,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </FilterGroup>
 
             <FilterGroup title="가격">
-              {pricingOptions.map((option) => (
+              {filterGroups[1].options.map((option) => (
                 <FilterLink
                   key={option.value}
                   href={buildHref(filters, {
@@ -132,27 +128,81 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
         </aside>
 
-        <div className="space-y-5">
-          <div className="flex flex-col gap-3 border-b border-hairline-soft pb-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-caption">{catalog.source === "demo" ? "Demo Catalog" : "Live Catalog"}</p>
-              <h2 className="text-headline">{resultLabel}</h2>
+        {/* Content Area */}
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hairline-soft pb-4">
+            {/* Result Label + Mobile Filter Dropdowns */}
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-headline shrink-0">
+                {resultLabel}
+                <span className="ml-2 text-body-sm font-normal opacity-50">
+                  {catalog.products.length}개
+                </span>
+              </h2>
+
+              {/* Mobile Filter: visible only below md */}
+              <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 scrollbar-hide md:hidden">
+                <span className="mx-1 h-4 w-px shrink-0 bg-hairline" />
+                {filterGroups.map((group) => (
+                  <FilterDropdown
+                    key={group.key}
+                    label={group.label}
+                    options={group.options}
+                    filters={filters}
+                    filterKey={group.key}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+
+            {/* Right: Sort Options */}
+            <div className="flex items-center gap-1">
               {sortOptions.map((option) => (
-                <FilterChip
+                <SortChip
                   key={option.value}
                   href={buildHref(filters, { sort: option.value })}
                   selected={selectedSort === option.value}
                 >
                   {option.label}
-                </FilterChip>
+                </SortChip>
               ))}
             </div>
           </div>
 
+          {/* Active filters display */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-caption opacity-50">필터:</span>
+              {filters.category && (
+                <ActiveFilter
+                  label={catalog.categories.find((c) => c.slug === filters.category)?.name ?? filters.category}
+                  href={buildHref(filters, { category: undefined })}
+                />
+              )}
+              {filters.productType && (
+                <ActiveFilter
+                  label={filterGroups[0].options.find((o) => o.value === filters.productType)?.label ?? filters.productType}
+                  href={buildHref(filters, { productType: undefined })}
+                />
+              )}
+              {filters.pricing && (
+                <ActiveFilter
+                  label={filterGroups[1].options.find((o) => o.value === filters.pricing)?.label ?? filters.pricing}
+                  href={buildHref(filters, { pricing: undefined })}
+                />
+              )}
+              <Link
+                className="text-caption text-accent-magenta transition-opacity hover:opacity-70"
+                href="/products"
+              >
+                전체 해제
+              </Link>
+            </div>
+          )}
+
+          {/* Product results */}
           {catalog.products.length > 0 ? (
-            <div className="grid items-stretch gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="space-y-3">
               {catalog.products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -165,6 +215,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     </main>
   );
 }
+
+/* ── Helpers ── */
 
 function normalizeFilters(params: Record<string, string | string[] | undefined>): ProductCatalogFilters {
   return {
@@ -197,34 +249,13 @@ function buildHref(filters: ProductCatalogFilters, patch: Partial<ProductCatalog
   return query ? `/products?${query}` : "/products";
 }
 
-function FilterChip({
-  href,
-  selected,
-  children,
-}: {
-  href: string;
-  selected: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      className={
-        selected
-          ? "whitespace-nowrap rounded-[var(--radius-full)] bg-primary px-4 py-2 text-body-sm text-on-primary"
-          : "whitespace-nowrap rounded-[var(--radius-full)] border border-hairline px-4 py-2 text-body-sm"
-      }
-      href={href}
-    >
-      {children}
-    </Link>
-  );
-}
+/* ── UI Components ── */
 
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-3">
-      <p className="text-caption">{title}</p>
-      <div className="space-y-2">{children}</div>
+    <div className="space-y-4">
+      <h3 className="text-caption font-bold tracking-wider text-ink/40 uppercase">{title}</h3>
+      <div className="flex flex-col gap-2">{children}</div>
     </div>
   );
 }
@@ -240,10 +271,53 @@ function FilterLink({
 }) {
   return (
     <Link
+      className={`group flex items-center gap-2.5 py-1 text-body-sm transition-all duration-200 ${
+        selected
+          ? "font-bold text-ink"
+          : "text-ink/50 hover:text-ink"
+      }`}
+      href={href}
+    >
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border transition-all duration-200 ${
+          selected
+            ? "border-primary bg-primary text-on-primary"
+            : "border-hairline bg-transparent group-hover:border-ink/40"
+        }`}
+      >
+        {selected && (
+          <svg
+            className="h-2.5 w-2.5 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+      </span>
+      <span>{children}</span>
+    </Link>
+  );
+}
+
+function CategoryChip({
+  href,
+  selected,
+  children,
+}: {
+  href: string;
+  selected: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
       className={
         selected
-          ? "flex min-h-10 items-center justify-between rounded-[var(--radius-pill)] bg-primary px-4 text-body-sm text-on-primary"
-          : "flex min-h-10 items-center justify-between rounded-[var(--radius-pill)] bg-surface-soft px-4 text-body-sm"
+          ? "category-chip-selected"
+          : "category-chip"
       }
       href={href}
     >
@@ -252,19 +326,93 @@ function FilterLink({
   );
 }
 
+function SortChip({
+  href,
+  selected,
+  children,
+}: {
+  href: string;
+  selected: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      className={
+        selected
+          ? "sort-chip-selected"
+          : "sort-chip"
+      }
+      href={href}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function FilterDropdown({
+  label,
+  options,
+  filters,
+  filterKey,
+}: {
+  label: string;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  filters: ProductCatalogFilters;
+  filterKey: string;
+}) {
+  const currentValue = filterKey === "type" ? filters.productType : filters.pricing;
+
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <span className="text-caption opacity-50">{label}</span>
+      {options.map((option) => {
+        const isActive = currentValue === option.value;
+        const patch =
+          filterKey === "type"
+            ? { productType: isActive ? undefined : option.value }
+            : { pricing: isActive ? undefined : option.value };
+
+        return (
+          <Link
+            key={option.value}
+            className={isActive ? "filter-chip-active" : "filter-chip"}
+            href={buildHref(filters, patch)}
+          >
+            {option.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function ActiveFilter({ label, href }: { label: string; href: string }) {
+  return (
+    <Link
+      className="inline-flex items-center gap-1.5 rounded-[var(--radius-full)] bg-block-lilac/30 px-3 py-1 text-caption transition-colors hover:bg-block-lilac/50"
+      href={href}
+    >
+      {label}
+      <span aria-hidden="true">×</span>
+    </Link>
+  );
+}
+
 function ZeroResultPanel({ query }: { query?: string }) {
   return (
-    <div className="color-block bg-block-lime">
-      <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
-        <div className="space-y-3">
-          <p className="text-eyebrow">Zero Result</p>
-          <h2 className="text-headline">아직 조건에 맞는 제품을 찾지 못했어요.</h2>
-          <p className="max-w-2xl text-body-sm">
-            {query ? `"${query}"와 비슷한 제품이 등록되면 알려드릴 수 있습니다.` : "검색어를 조금 넓히거나 카테고리를 둘러보세요."}
-          </p>
-        </div>
-        <Link className="btn-primary" href={`/alerts/new${query ? `?q=${encodeURIComponent(query)}` : ""}`}>
-          <Bell size={20} strokeWidth={1.8} />
+    <div className="color-block bg-block-cream">
+      <div className="mx-auto max-w-xl space-y-5 text-center">
+        <Search size={48} strokeWidth={1.2} className="mx-auto opacity-30" />
+        <h2 className="text-headline">
+          조건에 맞는 제품을 찾지 못했어요.
+        </h2>
+        <p className="text-body-sm">
+          {query
+            ? `"${query}"와 비슷한 제품이 등록되면 알려드릴 수 있습니다.`
+            : "검색어를 조금 넓히거나 카테고리를 둘러보세요."}
+        </p>
+        <Link className="btn-primary mx-auto" href={`/alerts/new${query ? `?q=${encodeURIComponent(query)}` : ""}`}>
+          <Bell size={18} strokeWidth={1.8} />
           알림 받기
         </Link>
       </div>

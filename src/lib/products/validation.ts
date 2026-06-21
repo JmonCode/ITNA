@@ -11,6 +11,13 @@ const optionalUrlSchema = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+const optionalEmailSchema = z
+  .string()
+  .trim()
+  .email()
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 export const productSubmissionSchema = z
   .object({
     name: z.string().trim().min(2).max(80),
@@ -30,7 +37,7 @@ export const productSubmissionSchema = z
     hasAiFeature: z.boolean().default(false),
     aiToolsUsed: z.string().trim().max(1000).optional(),
     makerName: z.string().trim().max(80).optional(),
-    contactEmail: z.string().trim().email().optional(),
+    contactEmail: optionalEmailSchema,
     tags: z.array(z.string().trim().min(1).max(30)).max(12).default([]),
   })
   .superRefine((value, context) => {

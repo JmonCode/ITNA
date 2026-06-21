@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { getConfiguredAdminEmails } from "@/lib/auth/admin-emails";
+
 const serverEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -11,6 +13,11 @@ const serverEnvSchema = z.object({
   OPENAI_EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
   SUPABASE_STORAGE_PRODUCT_IMAGES_BUCKET: z.string().min(1).default("product-images"),
   ADMIN_EMAILS: z.string().default(""),
+});
+
+const supabaseAdminEnvSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
 export function getServerEnv() {
@@ -26,9 +33,17 @@ export function getServerEnv() {
   });
 }
 
+export function getSupabaseAdminEnv() {
+  return supabaseAdminEnvSchema.parse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  });
+}
+
+export function hasSupabaseAdminEnv() {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 export function getAdminEmails() {
-  return getServerEnv()
-    .ADMIN_EMAILS.split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+  return getConfiguredAdminEmails();
 }

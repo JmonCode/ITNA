@@ -24,6 +24,9 @@ export type ProductListItem = {
   commentCount: number;
   viewCount: number;
   imageUrl?: string | null;
+  websiteUrl?: string | null;
+  androidUrl?: string | null;
+  iosUrl?: string | null;
   tags: string[];
   thumbnailColor: "lime" | "lilac" | "cream" | "pink" | "mint" | "coral";
   createdAt: string;
@@ -105,6 +108,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 42,
     commentCount: 8,
     viewCount: 821,
+    websiteUrl: "https://example.com/routine-fit",
     tags: ["루틴", "기록", "모바일"],
     thumbnailColor: "lime",
     createdAt: "2026-06-10",
@@ -122,6 +126,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 31,
     commentCount: 12,
     viewCount: 612,
+    websiteUrl: "https://example.com/portfolio-reviewer",
     tags: ["피드백", "디자인", "AI 기능"],
     thumbnailColor: "lilac",
     createdAt: "2026-06-08",
@@ -139,6 +144,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 19,
     commentCount: 5,
     viewCount: 433,
+    websiteUrl: "https://example.com/booking-note",
     tags: ["예약", "고객관리", "웹앱"],
     thumbnailColor: "coral",
     createdAt: "2026-06-04",
@@ -156,6 +162,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 58,
     commentCount: 15,
     viewCount: 1044,
+    websiteUrl: "https://example.com/bug-scout",
     tags: ["개발", "테스트", "AI"],
     thumbnailColor: "mint",
     createdAt: "2026-06-12",
@@ -173,6 +180,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 73,
     commentCount: 21,
     viewCount: 1442,
+    websiteUrl: "https://example.com/write-mate",
     tags: ["글쓰기", "초안", "AI"],
     thumbnailColor: "cream",
     createdAt: "2026-06-01",
@@ -190,6 +198,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 24,
     commentCount: 3,
     viewCount: 389,
+    iosUrl: "https://example.com/focus-loop",
     tags: ["집중", "공부", "회고"],
     thumbnailColor: "pink",
     createdAt: "2026-05-28",
@@ -207,6 +216,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 47,
     commentCount: 10,
     viewCount: 936,
+    websiteUrl: "https://example.com/landing-pad",
     tags: ["랜딩페이지", "출시", "검증"],
     thumbnailColor: "lime",
     createdAt: "2026-06-14",
@@ -224,6 +234,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 36,
     commentCount: 7,
     viewCount: 704,
+    websiteUrl: "https://example.com/team-pulse",
     tags: ["협업", "회고", "목표"],
     thumbnailColor: "lilac",
     createdAt: "2026-06-13",
@@ -241,6 +252,7 @@ const demoProducts: ProductListItem[] = [
     recommendationCount: 28,
     commentCount: 6,
     viewCount: 588,
+    websiteUrl: "https://example.com/api-mock-studio",
     tags: ["API", "목업", "개발"],
     thumbnailColor: "mint",
     createdAt: "2026-06-11",
@@ -261,8 +273,15 @@ export async function getProductCatalog(filters: ProductCatalogFilters): Promise
 }
 
 export async function getProductById(id: string) {
-  const catalog = await getProductCatalog({});
-  return catalog.products.find((product) => product.id === id) ?? null;
+  if (!hasSupabaseReadEnv()) {
+    return demoProducts.find((product) => product.id === id) ?? null;
+  }
+
+  try {
+    return await getSupabaseProductById(id);
+  } catch {
+    return demoProducts.find((product) => product.id === id) ?? null;
+  }
 }
 
 function hasSupabaseReadEnv() {
@@ -335,6 +354,9 @@ async function getSupabaseCatalog(filters: ProductCatalogFilters): Promise<Produ
       recommendation_count,
       comment_count,
       view_count,
+      website_url,
+      android_url,
+      ios_url,
       created_at,
       categories(id,name,slug,description),
       product_images(image_url,image_type,sort_order,deleted_at),
@@ -384,41 +406,103 @@ async function getSupabaseCatalog(filters: ProductCatalogFilters): Promise<Produ
     count: productRows?.filter((product) => getJoinedCategory(product)?.id === row.id).length ?? 0,
   }));
 
-  const products = (productRows ?? []).map((row, index) => {
-    const category = getJoinedCategory(row);
-    return {
-      id: row.id,
-      name: row.name,
-      shortDescription: row.short_description,
-      productType: row.product_type,
-      category: {
-        id: category?.id ?? "uncategorized",
-        name: category?.name ?? "기타",
-        slug: category?.slug ?? "other",
-        description: category?.description ?? "",
-        count: 0,
-      },
-      pricingType: row.pricing_type,
-      launchStatus: row.launch_status,
-      isAiBuilt: row.is_ai_built,
-      hasAiFeature: row.has_ai_feature,
-      recommendationCount: row.recommendation_count,
-      commentCount: row.comment_count,
-      viewCount: row.view_count,
-      imageUrl: getProductImageUrl(row),
-      tags:
-        row.product_tags
-          ?.map((tagJoin) => getJoinedTagName(tagJoin))
-          .filter((tag): tag is string => Boolean(tag)) ?? [],
-      thumbnailColor: pickThumbnailColor(index),
-      createdAt: row.created_at,
-    } satisfies ProductListItem;
-  });
+  const products = (productRows ?? []).map((row, index) => mapProductRow(row, index));
 
   return {
     categories,
     products,
     source: "supabase",
+  };
+}
+
+async function getSupabaseProductById(id: string): Promise<ProductListItem | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id,
+      name,
+      short_description,
+      product_type,
+      pricing_type,
+      launch_status,
+      is_ai_built,
+      has_ai_feature,
+      recommendation_count,
+      comment_count,
+      view_count,
+      website_url,
+      android_url,
+      ios_url,
+      created_at,
+      categories(id,name,slug,description),
+      product_images(image_url,image_type,sort_order,deleted_at),
+      product_tags(tags(name))
+    `,
+    )
+    .eq("id", id)
+    .eq("status", "approved")
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? mapProductRow(data, 0) : null;
+}
+
+function mapProductRow(row: unknown, index: number): ProductListItem {
+  const product = row as {
+    id: string;
+    name: string;
+    short_description: string;
+    product_type: ProductListItem["productType"];
+    pricing_type: ProductListItem["pricingType"];
+    launch_status: ProductListItem["launchStatus"];
+    is_ai_built: boolean;
+    has_ai_feature: boolean;
+    recommendation_count: number;
+    comment_count: number;
+    view_count: number;
+    website_url?: string | null;
+    android_url?: string | null;
+    ios_url?: string | null;
+    created_at: string;
+    product_tags?: unknown[];
+  };
+  const category = getJoinedCategory(row);
+
+  return {
+    id: product.id,
+    name: product.name,
+    shortDescription: product.short_description,
+    productType: product.product_type,
+    category: {
+      id: category?.id ?? "uncategorized",
+      name: category?.name ?? "기타",
+      slug: category?.slug ?? "other",
+      description: category?.description ?? "",
+      count: 0,
+    },
+    pricingType: product.pricing_type,
+    launchStatus: product.launch_status,
+    isAiBuilt: product.is_ai_built,
+    hasAiFeature: product.has_ai_feature,
+    recommendationCount: product.recommendation_count,
+    commentCount: product.comment_count,
+    viewCount: product.view_count,
+    imageUrl: getProductImageUrl(row),
+    websiteUrl: product.website_url,
+    androidUrl: product.android_url,
+    iosUrl: product.ios_url,
+    tags:
+      product.product_tags
+        ?.map((tagJoin) => getJoinedTagName(tagJoin))
+        .filter((tag): tag is string => Boolean(tag)) ?? [],
+    thumbnailColor: pickThumbnailColor(index),
+    createdAt: product.created_at,
   };
 }
 

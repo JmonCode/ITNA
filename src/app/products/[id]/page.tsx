@@ -18,6 +18,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     notFound();
   }
 
+  const productUrl = product.websiteUrl ?? product.androidUrl ?? product.iosUrl;
+
   return (
     <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
@@ -44,11 +46,15 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             ))}
           </div>
 
-          <div className="color-block bg-block-cream">
-            <p className="text-headline">
-              상세 설명, 스크린샷, 댓글, 신고, 외부 링크 클릭 로그는 다음 구현 단계에서 이 페이지에
-              연결됩니다.
-            </p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <InfoTile label="유형" value={product.productType} />
+            <InfoTile label="가격" value={product.pricingType} />
+            <InfoTile label="상태" value={product.launchStatus} />
+          </div>
+
+          <div className="color-block bg-block-cream space-y-4">
+            <p className="text-eyebrow">Why It Matters</p>
+            <p className="text-headline">{product.shortDescription}</p>
           </div>
         </div>
 
@@ -65,13 +71,28 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 댓글 {product.commentCount}
               </div>
             </div>
-            <button className="btn-primary w-full" type="button">
-              웹사이트 방문
-              <ArrowUpRight size={20} strokeWidth={1.8} />
-            </button>
+            {productUrl ? (
+              <Link className="btn-primary w-full" href={productUrl} target="_blank" rel="noreferrer">
+                웹사이트 방문
+                <ArrowUpRight size={20} strokeWidth={1.8} />
+              </Link>
+            ) : (
+              <button className="btn-secondary w-full border border-hairline" type="button" disabled>
+                외부 링크 없음
+              </button>
+            )}
           </div>
         </aside>
       </section>
     </main>
+  );
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="operational-card p-4">
+      <p className="text-caption opacity-50">{label}</p>
+      <p className="mt-3 text-body-sm">{value}</p>
+    </div>
   );
 }
