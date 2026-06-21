@@ -2,20 +2,20 @@ import "server-only";
 
 import OpenAI from "openai";
 
-import { getServerEnv } from "@/lib/env.server";
+import { getOpenAIEnv } from "@/lib/env.server";
 
 let openai: OpenAI | null = null;
 
 function getOpenAIClient() {
   if (!openai) {
-    openai = new OpenAI({ apiKey: getServerEnv().OPENAI_API_KEY });
+    openai = new OpenAI({ apiKey: getOpenAIEnv().OPENAI_API_KEY });
   }
 
   return openai;
 }
 
 export async function createTextEmbedding(input: string) {
-  const env = getServerEnv();
+  const env = getOpenAIEnv();
   const response = await getOpenAIClient().embeddings.create({
     model: env.OPENAI_EMBEDDING_MODEL,
     input,

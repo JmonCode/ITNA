@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { assertSuperAdmin } from "@/lib/auth/super-admin";
+import { refreshProductSearchEmbedding } from "@/lib/products/embeddings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function approveProductAction(formData: FormData) {
@@ -23,6 +24,10 @@ export async function approveProductAction(formData: FormData) {
   if (error) {
     throw new Error(error.message);
   }
+
+  await refreshProductSearchEmbedding(supabase, productId).catch(() => {
+    // Approval must not be blocked by embedding generation. Missing embeddings are backfilled later.
+  });
 
   revalidateProductPaths(productId);
 }

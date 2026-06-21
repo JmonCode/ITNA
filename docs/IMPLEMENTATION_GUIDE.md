@@ -3,11 +3,12 @@
 ## Order Of Work
 
 1. Keep `AGENTS.md`, `DESIGN.md`, `.env.example`, and this guide current.
-2. Build UI foundations from `DESIGN.md` before feature UI.
-3. Apply Supabase migrations before implementing server actions.
-4. Implement product registration and admin approval before public search.
-5. Implement search logging before tuning ranking.
-6. Run QA with `docs/QA_CHECKLIST.md` before deployment.
+2. Put important deferred setup or launch blockers in `docs/LATER_NOTES.md`.
+3. Build UI foundations from `DESIGN.md` before feature UI.
+4. Apply Supabase migrations before implementing server actions.
+5. Implement product registration and admin approval before public search.
+6. Implement search logging before tuning ranking.
+7. Run QA with `docs/QA_CHECKLIST.md` before deployment.
 
 ## App Structure
 

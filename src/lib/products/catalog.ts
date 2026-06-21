@@ -1,5 +1,7 @@
 import "server-only";
 
+import { hasOpenAIEnv } from "@/lib/env.server";
+import { createTextEmbedding } from "@/lib/openai/embeddings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ProductCategory = {
@@ -44,6 +46,7 @@ type ProductCatalog = {
   categories: ProductCategory[];
   products: ProductListItem[];
   source: "supabase" | "demo";
+  searchType: "none" | "keyword" | "hybrid" | "demo";
 };
 
 const demoCategories: ProductCategory[] = [
@@ -322,12 +325,48 @@ function filterDemoCatalog(filters: ProductCatalogFilters): ProductCatalog {
     categories: demoCategories,
     products,
     source: "demo",
+    searchType: filters.query ? "demo" : "none",
   };
 }
 
 async function getSupabaseCatalog(filters: ProductCatalogFilters): Promise<ProductCatalog> {
   const supabase = await createSupabaseServerClient();
+  const categoryRows = await getSupabaseCategoryRows(supabase);
+  const normalizedQuery = normalize(filters.query);
 
+  if (normalizedQuery && hasOpenAIEnv() && shouldUseHybridSearch(filters.sort)) {
+    try {
+      const products = await getSupabaseHybridProducts({
+        supabase,
+        filters,
+        categoryRows,
+        normalizedQuery,
+      });
+
+      return {
+        categories: mapCategoryRows(categoryRows, products),
+        products,
+        source: "supabase",
+        searchType: "hybrid",
+      };
+    } catch {
+      // Keep the UI usable if embeddings or the RPC are not ready yet.
+    }
+  }
+
+  const products = await getSupabaseKeywordProducts({ supabase, filters, categoryRows });
+
+  return {
+    categories: mapCategoryRows(categoryRows, products),
+    products,
+    source: "supabase",
+    searchType: normalizedQuery ? "keyword" : "none",
+  };
+}
+
+async function getSupabaseCategoryRows(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+) {
   const { data: categoryRows, error: categoryError } = await supabase
     .from("categories")
     .select("id,name,slug,description")
@@ -339,6 +378,18 @@ async function getSupabaseCatalog(filters: ProductCatalogFilters): Promise<Produ
     throw categoryError;
   }
 
+  return categoryRows ?? [];
+}
+
+async function getSupabaseKeywordProducts({
+  supabase,
+  filters,
+  categoryRows,
+}: {
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  filters: ProductCatalogFilters;
+  categoryRows: Array<{ id: string; name: string; slug: string; description: string | null }>;
+}) {
   let query = supabase
     .from("products")
     .select(
@@ -393,26 +444,102 @@ async function getSupabaseCatalog(filters: ProductCatalogFilters): Promise<Produ
 
   query = applySupabaseSort(query, filters.sort);
 
-  const { data: productRows, error: productError } = await query;
+  const { data, error } = await query;
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row, index) => mapProductRow(row, index));
+}
+
+async function getSupabaseHybridProducts({
+  supabase,
+  filters,
+  categoryRows,
+  normalizedQuery,
+}: {
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  filters: ProductCatalogFilters;
+  categoryRows: Array<{ id: string; name: string; slug: string; description: string | null }>;
+  normalizedQuery: string;
+}) {
+  const categoryId = filters.category
+    ? categoryRows.find((row) => row.slug === filters.category)?.id ?? null
+    : null;
+  const embedding = await createTextEmbedding(normalizedQuery);
+
+  if (!embedding.length) {
+    throw new Error("Embedding creation returned no vector.");
+  }
+
+  const { data: rankedRows, error: rankError } = await supabase.rpc("search_products_hybrid", {
+    query_text: normalizedQuery,
+    query_embedding: `[${embedding.join(",")}]`,
+    match_count: productCatalogLimit * 3,
+    category_filter: categoryId,
+  });
+
+  if (rankError) {
+    throw rankError;
+  }
+
+  const rankedIds = ((rankedRows ?? []) as Array<{ id: string }>).map((row) => row.id);
+
+  if (!rankedIds.length) {
+    return [];
+  }
+
+  let productQuery = supabase
+    .from("products")
+    .select(
+      `
+      id,
+      name,
+      short_description,
+      product_type,
+      pricing_type,
+      launch_status,
+      is_ai_built,
+      has_ai_feature,
+      recommendation_count,
+      comment_count,
+      view_count,
+      website_url,
+      android_url,
+      ios_url,
+      created_at,
+      categories(id,name,slug,description),
+      product_images(image_url,image_type,sort_order,deleted_at),
+      product_tags(tags(name))
+    `,
+    )
+    .in("id", rankedIds)
+    .eq("status", "approved")
+    .is("deleted_at", null);
+
+  if (filters.productType) {
+    productQuery = productQuery.eq("product_type", filters.productType);
+  }
+
+  if (filters.pricing) {
+    productQuery = productQuery.eq("pricing_type", filters.pricing);
+  }
+
+  const { data: productRows, error: productError } = await productQuery;
+
   if (productError) {
     throw productError;
   }
 
-  const categories = (categoryRows ?? []).map((row) => ({
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    description: row.description ?? "",
-    count: productRows?.filter((product) => getJoinedCategory(product)?.id === row.id).length ?? 0,
-  }));
+  const rowById = new Map((productRows ?? []).map((row) => [row.id, row]));
 
-  const products = (productRows ?? []).map((row, index) => mapProductRow(row, index));
-
-  return {
-    categories,
-    products,
-    source: "supabase",
-  };
+  return rankedIds
+    .map((id, index) => {
+      const row = rowById.get(id);
+      return row ? mapProductRow(row, index) : null;
+    })
+    .filter((product): product is ProductListItem => Boolean(product))
+    .slice(0, productCatalogLimit);
 }
 
 async function getSupabaseProductById(id: string): Promise<ProductListItem | null> {
@@ -537,6 +664,23 @@ function sortProducts(products: ProductListItem[], sort?: string) {
         return Date.parse(b.createdAt) - Date.parse(a.createdAt);
     }
   });
+}
+
+function mapCategoryRows(
+  categoryRows: Array<{ id: string; name: string; slug: string; description: string | null }>,
+  products: ProductListItem[],
+) {
+  return categoryRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description ?? "",
+    count: products.filter((product) => product.category.id === row.id).length,
+  }));
+}
+
+function shouldUseHybridSearch(sort?: string) {
+  return !sort || sort === "newest" || sort === "relevance";
 }
 
 function normalize(value?: string) {

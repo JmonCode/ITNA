@@ -1,8 +1,22 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, Eye, MessageCircle, ThumbsUp } from "lucide-react";
 
-import type { ProductListItem } from "@/lib/products/catalog";
+type ProductCardItem = {
+  id: string;
+  name: string;
+  shortDescription: string;
+  recommendationCount: number;
+  commentCount: number;
+  viewCount: number;
+  imageUrl?: string | null;
+  category: {
+    name: string;
+  };
+  tags: string[];
+};
 
 const accentColors = [
   "bg-block-lime",
@@ -21,14 +35,49 @@ function getAccentColor(id: string): string {
   return accentColors[Math.abs(hash) % accentColors.length];
 }
 
-export function ProductCard({ product }: { product: ProductListItem }) {
+export function ProductCard({
+  product,
+  rank,
+  shouldLogSearchClick = false,
+}: {
+  product: ProductCardItem;
+  rank?: number;
+  shouldLogSearchClick?: boolean;
+}) {
   const accent = getAccentColor(product.id);
+
+  function logSearchClick() {
+    if (!shouldLogSearchClick || !rank) {
+      return;
+    }
+
+    const body = JSON.stringify({
+      productId: product.id,
+      rankPosition: rank,
+    });
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon("/api/search/click", blob);
+      return;
+    }
+
+    void fetch("/api/search/click", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body,
+      keepalive: true,
+    });
+  }
 
   return (
     <Link
       className="group block rounded-[var(--radius-md)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
       href={`/products/${product.id}`}
       aria-label={`${product.name} 상세 보기`}
+      onClick={logSearchClick}
     >
       <article className="product-card grid grid-cols-[84px_1fr] gap-3 p-3 sm:grid-cols-[112px_1fr_auto] sm:items-center sm:gap-4 sm:p-4">
         <div className={`relative row-span-2 aspect-square overflow-hidden rounded-[var(--radius-sm)] sm:row-span-1 sm:aspect-[4/3] ${accent}`}>

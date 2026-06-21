@@ -47,5 +47,6 @@ npm run build
 
 - Read `AGENTS.md` before implementation work.
 - Read `DESIGN.md` before UI work.
+- Keep important deferred setup and launch notes in `docs/LATER_NOTES.md`.
 - Keep Supabase schema changes in `supabase/migrations`.
 - Never commit `.env.local` or provider secrets.

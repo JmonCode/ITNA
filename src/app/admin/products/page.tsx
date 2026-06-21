@@ -73,6 +73,9 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           <Link className="btn-secondary border border-hairline" href="/submit">
             등록 화면
           </Link>
+          <Link className="btn-secondary border border-hairline" href="/admin/search-alerts/export">
+            알림 CSV
+          </Link>
         </div>
 
         {products.length ? (

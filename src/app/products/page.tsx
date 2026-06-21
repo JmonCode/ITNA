@@ -4,6 +4,7 @@ import { ArrowUpRight, Bell, Search } from "lucide-react";
 import { MarqueeStrip } from "@/components/marquee-strip";
 import { ProductCard } from "@/components/product-card";
 import { ProductLiveSearch } from "@/components/product-live-search";
+import { SearchLogger } from "@/components/search-logger";
 import { SiteHeader } from "@/components/site-header";
 import { getProductCatalog, type ProductCatalogFilters } from "@/lib/products/catalog";
 
@@ -34,6 +35,7 @@ const filterGroups = [
 ] as const;
 
 const sortOptions = [
+  { value: "relevance", label: "관련순" },
   { value: "newest", label: "최신순" },
   { value: "popular", label: "추천순" },
   { value: "comments", label: "댓글순" },
@@ -44,7 +46,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const params = await searchParams;
   const filters = normalizeFilters(params);
   const catalog = await getProductCatalog(filters);
-  const selectedSort = filters.sort ?? "newest";
+  const selectedSort = filters.sort ?? (filters.query ? "relevance" : "newest");
+  const visibleSortOptions = filters.query
+    ? sortOptions
+    : sortOptions.filter((option) => option.value !== "relevance");
+  const searchType = catalog.searchType === "hybrid" ? "hybrid" : "keyword";
 
   const hasActiveFilters = filters.category || filters.productType || filters.pricing;
   const resultLabel = filters.query
@@ -55,6 +61,17 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
       <MarqueeStrip />
+      <SearchLogger
+        query={filters.query}
+        resultCount={catalog.products.length}
+        searchType={searchType}
+        filters={{
+          category: filters.category,
+          productType: filters.productType,
+          pricing: filters.pricing,
+        }}
+        sortOption={selectedSort}
+      />
 
       {/* ── Hero search area ── */}
       <section className="border-b border-hairline-soft">
@@ -157,7 +174,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
             {/* Right: Sort Options */}
             <div className="flex items-center gap-1">
-              {sortOptions.map((option) => (
+              {visibleSortOptions.map((option) => (
                 <SortChip
                   key={option.value}
                   href={buildHref(filters, { sort: option.value })}
@@ -203,8 +220,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           {/* Product results */}
           {catalog.products.length > 0 ? (
             <div className="space-y-3">
-              {catalog.products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {catalog.products.map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  rank={index + 1}
+                  shouldLogSearchClick={Boolean(filters.query)}
+                />
               ))}
             </div>
           ) : (

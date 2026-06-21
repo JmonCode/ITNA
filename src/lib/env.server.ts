@@ -20,6 +20,11 @@ const supabaseAdminEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
+const openAiEnvSchema = z.object({
+  OPENAI_API_KEY: z.string().min(1),
+  OPENAI_EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
+});
+
 export function getServerEnv() {
   return serverEnvSchema.parse({
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
@@ -42,6 +47,17 @@ export function getSupabaseAdminEnv() {
 
 export function hasSupabaseAdminEnv() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+export function getOpenAIEnv() {
+  return openAiEnvSchema.parse({
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL,
+  });
+}
+
+export function hasOpenAIEnv() {
+  return Boolean(process.env.OPENAI_API_KEY);
 }
 
 export function getAdminEmails() {
