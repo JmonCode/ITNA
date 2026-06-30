@@ -24,7 +24,7 @@ export async function signInWithEmail(formData: FormData) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: await buildAuthCallbackUrl(next),
+      emailRedirectTo: await buildAuthConfirmUrl(next),
     },
   });
 
@@ -52,6 +52,10 @@ export async function signInWithOAuth(formData: FormData) {
     provider,
     options: {
       redirectTo: await buildAuthCallbackUrl(next),
+      queryParams:
+        provider === "kakao"
+          ? { scope: "profile_nickname profile_image" }
+          : undefined,
     },
   });
 
@@ -60,6 +64,17 @@ export async function signInWithOAuth(formData: FormData) {
   }
 
   redirect(data.url);
+}
+
+export async function signOutAction(formData: FormData) {
+  const next = sanitizeNextPath(formData.get("next")?.toString());
+
+  if (hasPublicSupabaseEnv()) {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+  }
+
+  redirect(next);
 }
 
 function isOAuthProvider(provider: string | undefined): provider is OAuthProvider {
@@ -75,11 +90,19 @@ function sanitizeNextPath(next: string | undefined) {
 }
 
 async function buildAuthCallbackUrl(next: string) {
+  return buildAuthUrl("/auth/callback", next);
+}
+
+async function buildAuthConfirmUrl(next: string) {
+  return buildAuthUrl("/auth/confirm", next);
+}
+
+async function buildAuthUrl(path: string, next: string) {
   const headerStore = await headers();
   const origin =
     headerStore.get("origin") ??
     process.env.NEXT_PUBLIC_SITE_URL ??
     "http://localhost:3000";
 
-  return `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  return `${origin}${path}?next=${encodeURIComponent(next)}`;
 }

@@ -63,19 +63,24 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-headline">
             {statusLabels[status]}
             <span className="ml-2 text-body-sm font-normal opacity-50">
               {products.length}개
             </span>
           </h2>
-          <Link className="btn-secondary border border-hairline" href="/submit">
-            등록 화면
-          </Link>
-          <Link className="btn-secondary border border-hairline" href="/admin/search-alerts/export">
-            알림 CSV
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link className="btn-secondary border border-hairline" href="/submit">
+              등록 화면
+            </Link>
+            <Link className="btn-secondary border border-hairline" href="/admin/reports">
+              신고 관리
+            </Link>
+            <Link className="btn-secondary border border-hairline" href="/admin/search-alerts/export">
+              알림 CSV
+            </Link>
+          </div>
         </div>
 
         {products.length ? (

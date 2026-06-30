@@ -78,7 +78,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <div className="container-page space-y-6 py-8 md:py-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-eyebrow">Product Search</p>
+              <p className="text-eyebrow">제품 검색</p>
               <h1 className="text-display-lg mt-1">제품 탐색</h1>
             </div>
             <Link className="btn-primary shrink-0" href="/submit">
@@ -146,10 +146,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </aside>
 
         {/* Content Area */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hairline-soft pb-4">
             {/* Result Label + Mobile Filter Dropdowns */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
               <h2 className="text-headline shrink-0">
                 {resultLabel}
                 <span className="ml-2 text-body-sm font-normal opacity-50">
@@ -158,7 +158,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               </h2>
 
               {/* Mobile Filter: visible only below md */}
-              <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 scrollbar-hide md:hidden">
+              <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto pb-1 scrollbar-hide md:hidden">
                 <span className="mx-1 h-4 w-px shrink-0 bg-hairline" />
                 {filterGroups.map((group) => (
                   <FilterDropdown
@@ -219,7 +219,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
           {/* Product results */}
           {catalog.products.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {catalog.products.map((product, index) => (
                 <ProductCard
                   key={product.id}
@@ -276,7 +276,7 @@ function buildHref(filters: ProductCatalogFilters, patch: Partial<ProductCatalog
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-caption font-bold tracking-wider text-ink/40 uppercase">{title}</h3>
+      <h3 className="text-caption font-bold text-ink/40 uppercase">{title}</h3>
       <div className="flex flex-col gap-2">{children}</div>
     </div>
   );

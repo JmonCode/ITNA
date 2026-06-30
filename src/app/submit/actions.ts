@@ -11,6 +11,14 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasPublicSupabaseEnv } from "@/lib/env.client";
 import { hasSupabaseAdminEnv } from "@/lib/env.server";
 
+const maxProductImageSize = 10 * 1024 * 1024;
+const productImageExtensions: Record<string, string> = {
+  "image/gif": "gif",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 export async function submitProductAction(formData: FormData) {
   if (!hasPublicSupabaseEnv()) {
     redirect("/submit?error=supabase-env");
@@ -53,6 +61,14 @@ export async function submitProductAction(formData: FormData) {
 
   if (!parsed.success) {
     redirect("/submit?error=validation");
+  }
+
+  const productImage = getProductImage(formData.get("productImage"));
+  if (productImage === false) {
+    redirect("/submit?error=image");
+  }
+  if (productImage && !hasSupabaseAdminEnv()) {
+    redirect("/submit?error=image-upload");
   }
 
   const { data: category } = await supabase
@@ -98,10 +114,30 @@ export async function submitProductAction(formData: FormData) {
     redirect("/submit?error=insert");
   }
 
+  if (productImage) {
+    const imageAttached = await attachProductImage(product.id, user.id, parsed.data.name, productImage);
+    if (!imageAttached) {
+      await deleteProduct(product.id);
+      redirect("/submit?error=image-upload");
+    }
+  }
+
   await attachTags(product.id, parsed.data.tags);
 
   revalidatePath("/admin/products");
   redirect("/submit?submitted=1");
+}
+
+function getProductImage(value: FormDataEntryValue | null) {
+  if (!(value instanceof File) || value.size === 0) {
+    return null;
+  }
+
+  if (value.size > maxProductImageSize || !productImageExtensions[value.type]) {
+    return false;
+  }
+
+  return value;
 }
 
 function getText(formData: FormData, key: string) {
@@ -137,6 +173,42 @@ async function attachTags(productId: string, tags: string[]) {
     await admin
       .from("product_tags")
       .upsert({ product_id: productId, tag_id: tagRow.id }, { onConflict: "product_id,tag_id" });
+  }
+}
+
+async function attachProductImage(productId: string, makerId: string, productName: string, image: File) {
+  const admin = createSupabaseAdminClient();
+  const bucket = process.env.SUPABASE_STORAGE_PRODUCT_IMAGES_BUCKET ?? "product-images";
+  const path = `${makerId}/${productId}/${crypto.randomUUID()}.${productImageExtensions[image.type]}`;
+  const { error: uploadError } = await admin.storage.from(bucket).upload(path, image, {
+    contentType: image.type,
+    upsert: false,
+  });
+
+  if (uploadError) {
+    return false;
+  }
+
+  const { data } = admin.storage.from(bucket).getPublicUrl(path);
+  const { error: imageError } = await admin.from("product_images").insert({
+    product_id: productId,
+    image_url: data.publicUrl,
+    image_type: "thumbnail",
+    alt_text: productName,
+    sort_order: 0,
+  });
+
+  if (imageError) {
+    await admin.storage.from(bucket).remove([path]);
+    return false;
+  }
+
+  return true;
+}
+
+async function deleteProduct(productId: string) {
+  if (hasSupabaseAdminEnv()) {
+    await createSupabaseAdminClient().from("products").delete().eq("id", productId);
   }
 }
 

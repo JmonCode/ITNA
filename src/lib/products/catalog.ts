@@ -1,6 +1,7 @@
 import "server-only";
 
 import { hasOpenAIEnv } from "@/lib/env.server";
+import { hasPublicSupabaseEnv } from "@/lib/env.client";
 import { createTextEmbedding } from "@/lib/openai/embeddings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -288,9 +289,7 @@ export async function getProductById(id: string) {
 }
 
 function hasSupabaseReadEnv() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  return hasPublicSupabaseEnv();
 }
 
 function filterDemoCatalog(filters: ProductCatalogFilters): ProductCatalog {

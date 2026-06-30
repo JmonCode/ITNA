@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { ArrowLeft, KeyRound, Mail } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { signInWithEmail, signInWithOAuth } from "@/app/login/actions";
 import { MarqueeStrip } from "@/components/marquee-strip";
 import { SiteHeader } from "@/components/site-header";
+import { ensureUserProfile } from "@/lib/auth/super-admin";
+import { hasPublicSupabaseEnv } from "@/lib/env.client";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type LoginPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -13,14 +17,30 @@ const errorMessages: Record<string, string> = {
   "email-required": "이메일을 입력해주세요.",
   provider: "지원하지 않는 로그인 방식입니다.",
   "signin-failed": "로그인을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.",
+  callback: "인증 콜백을 처리하지 못했습니다. 다시 로그인해주세요.",
+  cancelled: "로그인이 취소되었거나 인증 제공자에서 오류가 발생했습니다.",
   "supabase-env": "Supabase 환경변수가 아직 설정되지 않았습니다.",
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const next = getSingleParam(params.next) ?? "/";
+  const next = sanitizeNextPath(getSingleParam(params.next));
   const error = getSingleParam(params.error);
   const sent = getSingleParam(params.sent) === "1";
+
+  if (!hasPublicSupabaseEnv()) {
+    return <LoginSetupNotice error={error} next={next} />;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    await ensureUserProfile(user);
+    redirect(next);
+  }
 
   return (
     <main className="min-h-screen bg-canvas text-ink">
@@ -98,10 +118,44 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   );
 }
 
+function LoginSetupNotice({ error, next }: { error?: string; next: string }) {
+  return (
+    <main className="min-h-screen bg-canvas text-ink">
+      <SiteHeader />
+      <MarqueeStrip />
+
+      <section className="container-page py-10 md:py-16">
+        <div className="color-block bg-block-cream space-y-4">
+          <p className="text-eyebrow">Sign In</p>
+          <h1 className="text-display-lg">Supabase 설정이 필요합니다.</h1>
+          <p className="max-w-2xl text-body">
+            로그인은 Supabase Auth 환경변수와 인증 provider 설정 후 사용할 수 있습니다.
+          </p>
+          <p className="text-body-sm">
+            필요한 값: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+          </p>
+          {error ? <p className="text-body-sm">{errorMessages[error]}</p> : null}
+          <Link className="btn-secondary border border-hairline" href={next}>
+            돌아가기
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function getSingleParam(value: string | string[] | undefined) {
   if (Array.isArray(value)) {
     return value[0];
   }
 
   return value?.trim() || undefined;
+}
+
+function sanitizeNextPath(next: string | undefined) {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return "/";
+  }
+
+  return next;
 }

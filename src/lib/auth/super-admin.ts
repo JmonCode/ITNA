@@ -18,7 +18,7 @@ export type SuperAdminState = {
   profile:
     | {
         id: string;
-        email: string;
+        email: string | null;
         nickname: string | null;
         role: ProfileRole;
       }
@@ -35,7 +35,7 @@ export async function getCurrentSuperAdminState(): Promise<SuperAdminState> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email) {
+  if (!user) {
     return emptySuperAdminState();
   }
 
@@ -59,7 +59,7 @@ export async function getCurrentSuperAdminState(): Promise<SuperAdminState> {
     profile: profile
       ? {
           id: profile.id,
-          email: profile.email,
+          email: profile.email ?? null,
           nickname: profile.nickname,
           role: role ?? "user",
         }

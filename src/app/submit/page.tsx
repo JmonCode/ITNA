@@ -3,6 +3,7 @@ import { ArrowLeft, Send } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { submitProductAction } from "@/app/submit/actions";
+import { ProductImageField } from "@/app/submit/product-image-field";
 import { MarqueeStrip } from "@/components/marquee-strip";
 import { SiteHeader } from "@/components/site-header";
 import { hasPublicSupabaseEnv } from "@/lib/env.client";
@@ -16,6 +17,8 @@ type SubmitPageProps = {
 const errorMessages: Record<string, string> = {
   "supabase-env": "Supabase 환경변수가 아직 설정되지 않았습니다.",
   validation: "필수 입력값과 URL 형식을 확인해주세요.",
+  image: "이미지는 jpg, png, webp, gif 형식의 10MB 이하 파일만 올릴 수 있습니다.",
+  "image-upload": "이미지를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.",
   insert: "제품을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.",
 };
 
@@ -73,7 +76,7 @@ export default async function SubmitPage({ searchParams }: SubmitPageProps) {
           </div>
         ) : null}
 
-        <form action={submitProductAction} className="grid gap-4 lg:grid-cols-[1fr_360px]">
+        <form action={submitProductAction} encType="multipart/form-data" className="grid gap-4 lg:grid-cols-[1fr_360px]">
           <div className="operational-card space-y-5 p-5">
             <Field label="제품명">
               <input className="text-input w-full" name="name" minLength={2} maxLength={80} required />
@@ -101,6 +104,7 @@ export default async function SubmitPage({ searchParams }: SubmitPageProps) {
             <Field label="주요 기능">
               <textarea className="text-input min-h-28 w-full" name="mainFeatures" minLength={10} maxLength={2000} required />
             </Field>
+            <ProductImageField />
           </div>
 
           <aside className="operational-card space-y-5 p-5">
