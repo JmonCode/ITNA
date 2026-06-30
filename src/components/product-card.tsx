@@ -117,8 +117,8 @@ export function ProductCard({
           )}
         </div>
 
-        <div className="space-y-4 p-4">
-          <p className="min-h-[46px] text-body-sm text-clamp-2">
+        <div className="space-y-3 p-3">
+          <p className="min-h-[40px] text-body-sm text-clamp-2">
             {product.shortDescription}
           </p>
           <div className="flex min-h-6 flex-wrap gap-2">
@@ -133,13 +133,13 @@ export function ProductCard({
           </div>
         </div>
 
-        <footer className="flex items-center justify-between gap-4 border-t border-hairline-soft px-4 py-3">
-          <div className="flex items-center gap-3 text-caption opacity-60">
+        <footer className="flex items-center justify-between gap-3 border-t border-hairline-soft px-3 py-2">
+          <div className="flex items-center gap-2 text-caption opacity-60">
             <Metric icon={<ThumbsUp size={12} strokeWidth={2} />} value={product.recommendationCount} />
             <Metric icon={<MessageCircle size={12} strokeWidth={2} />} value={product.commentCount} />
             <Metric icon={<Eye size={12} strokeWidth={2} />} value={product.viewCount} />
           </div>
-          <span className="btn-icon h-9 w-9" aria-hidden="true">
+          <span className="btn-icon h-8 w-8" aria-hidden="true">
             <ArrowUpRight size={16} strokeWidth={1.8} />
           </span>
         </footer>

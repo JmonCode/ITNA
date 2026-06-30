@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-30T07:07:27.250Z",
+  "updatedAt": "2026-06-30T07:19:52.561Z",
+  "briefPath": ".omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/brief.md",
+  "goalsPath": ".omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/goals.json",
+  "ledgerPath": ".omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-fix-itna-homepage-live-browser-so-pr",
+      "title": "Fix ITNA homepage live browser so primary buttons are brown design-to...",
+      "objective": "Fix ITNA homepage live browser so primary buttons are brown design-token buttons and the Spline hero characters render instead of a blank dark canvas. Success criteria: C1 live http://127.0.0.1:3000/ at 2048x1138 shows non-blue primary button styles and brown CTA colors; C2 live http://127.0.0.1:3000/ at 2048x1138 renders Spline characters in the hero, not only the dark background. Browser evidence screenshots required.",
+      "status": "complete",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "happy path for: Fix ITNA homepage live browser so primary buttons are brown design-token butt...",
+          "userModel": "happy",
+          "expectedEvidence": "Replace via revise_criterion with observable happy-path proof for goal 1.",
+          "essential": true,
+          "capturedEvidence": "Browser Playwright 2048x1138 http://127.0.0.1:3000/?ulw=green screenshot /tmp/itna-ulw-evidence/green-clean-2048x1138.png; computed .btn-primary background rgb(95, 75, 50), buttonIsBlue=false; browser closed; dev server PID 74003 intentionally retained for user QA at 127.0.0.1:3000",
+          "status": "pass",
+          "capturedAt": "2026-06-30T07:15:15.845Z",
+          "notes": "Live page serves brown design-token CTA, not stale blue."
+        },
+        {
+          "id": "C002",
+          "scenario": "edge case (boundary/empty/malformed)",
+          "userModel": "edge",
+          "expectedEvidence": "Replace via revise_criterion with boundary or malformed-input proof for: Fix ITNA homepage live browser so primary buttons are brown design-token butt....",
+          "essential": true,
+          "capturedEvidence": "Browser Playwright 2048x1138 http://127.0.0.1:3000/?ulw=green screenshot /tmp/itna-ulw-evidence/green-clean-2048x1138.png; Spline iframe src https://my.spline.design/googlyeyes-pZmDXlBzedodrTTE2B4kOtSd-iwy/?itna=20260630; hero screenshot visibly contains Spline characters; browser closed; dev server PID 74003 intentionally retained for user QA at 127.0.0.1:3000",
+          "status": "pass",
+          "capturedAt": "2026-06-30T07:15:15.848Z",
+          "notes": "Spline frame cache-busted and renders characters, not blank dark canvas."
+        },
+        {
+          "id": "C003",
+          "scenario": "regression: adjacent surface still works",
+          "userModel": "regression",
+          "expectedEvidence": "Replace via revise_criterion with regression proof for neighboring behavior after: Fix ITNA homepage live browser so primary buttons are brown design-token butt....",
+          "essential": false,
+          "capturedEvidence": "Regression checks: eslint exit 0; tsc --noEmit exit 0; vitest run --passWithNoTests exit 0 with 1 test file and 3 tests passed; dev server PID 74003 still serving 127.0.0.1:3000 for user QA.",
+          "status": "pass",
+          "capturedAt": "2026-06-30T07:15:53.189Z",
+          "notes": "Adjacent UI/card changes remain type-safe and test suite passes."
+        }
+      ],
+      "attempt": 0,
+      "createdAt": "2026-06-30T07:07:27.250Z",
+      "updatedAt": "2026-06-30T07:19:52.561Z",
+      "completedAt": "2026-06-30T07:19:52.561Z",
+      "evidence": "All criteria pass. Browser evidence: /tmp/itna-ulw-evidence/green-clean-2048x1138.png shows brown CTA and visible Spline characters. Diagnostics: eslint, tsc --noEmit, vitest all passed. Dev server intentionally retained for user QA at http://127.0.0.1:3000 PID 74003."
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/ledger.jsonl as the audit trail.",
+  "aggregateCompletion": {
+    "status": "complete",
+    "completedAt": "2026-06-30T07:19:52.561Z",
+    "evidence": "All criteria pass. Browser evidence: /tmp/itna-ulw-evidence/green-clean-2048x1138.png shows brown CTA and visible Spline characters. Diagnostics: eslint, tsc --noEmit, vitest all passed. Dev server intentionally retained for user QA at http://127.0.0.1:3000 PID 74003.",
+    "codexGoal": {
+      "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019f0d4b-5ea3-7b70-b7d7-2a95968ba8ea/ledger.jsonl as the audit trail.",
+      "status": "complete",
+      "tier": "LIGHT",
+      "selfReview": "Diff re-read; browser evidence confirms non-blue CTA and visible cache-busted Spline; diagnostics passed."
+    }
+  }
+}

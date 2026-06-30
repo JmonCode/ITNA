@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { MarqueeStrip } from "@/components/marquee-strip";
+import { HeroSpline } from "@/components/hero-spline";
 import { ProductCard } from "@/components/product-card";
 import { SiteHeader } from "@/components/site-header";
 
@@ -87,16 +88,7 @@ export default function Home() {
 
       {/* ━━ Hero ━━ */}
       <section className="hero-spline-section">
-        <iframe
-          className="hero-spline-frame"
-          src="https://my.spline.design/googlyeyes-pZmDXlBzedodrTTE2B4kOtSd-iwy/"
-          title="Googly Eyes"
-          frameBorder="0"
-          width="100%"
-          height="100%"
-          allow="autoplay; fullscreen"
-          allowFullScreen
-        />
+        <HeroSpline />
 
         <div className="hero-search-panel animate-in">
           <p className="text-eyebrow">제품 찾기</p>
@@ -162,7 +154,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {featuredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
